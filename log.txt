@@ -1,0 +1,14 @@
+I (14:43:29.019) BATT: Known battery
+I (14:43:29.031) BATT_EZ: designcap: 15600 ichgterm: 896 modelcfg: 0 vempty: 41057
+I (14:43:29.048) BATT_LP: cycles: 0 fullcapnom: 18096 fullcaprep: 15600 rcomp0: 1792 tempco: 8766
+I (14:43:29.155) RESTORING....: write rcomp0: 0x700
+I (14:43:29.180) RESTORING....: write tempco: 0x223e
+I (14:43:29.200) RESTORING....: write fullcapnom: 0x46b0
+I (14:43:29.560) RESTORING....: read fullcapnom: 0x46b0
+I (14:43:29.562) RESTORING....: read mixsoc: 0x502d
+I (14:43:29.570) RESTORING....: write mixcap: 0x38ac
+I (14:43:29.580) RESTORING....: write fullcaprep: 0x3cf0
+I (14:43:29.600) RESTORING....: write dpacc: 0xc80
+I (14:43:29.610) RESTORING....: write dqacc: 0x46b0
+I (14:43:29.970) RESTORING....: write cycles: 0x0
+I (14:43:29.972) BATT: Battery level: 93 %
