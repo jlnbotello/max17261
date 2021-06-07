@@ -16,7 +16,7 @@
 #include <string.h>
 
 /*==================[MACROS AND DEFINITIONS]=================================*/
-#define NEW_BATT_FLAG_GPIO  5                      
+#define NEW_BATT_FLAG_GPIO  5                       /* on GiveMove IoT v1.0.0 board is CS0 */
 #define BATT_MON_SDA_GPIO   21
 #define BATT_MON_SCL_GPIO   22
 
@@ -99,13 +99,14 @@ void batt_monitor_task(void *pvP)
     ESP_LOGI("BATT_EZ", "designcap: %d ichgterm: %d modelcfg: %d vempty: %d",ez.designcap,ez.ichgterm,ez.modelcfg,ez.vempty);
     ESP_LOGI("BATT_LP", "cycles: %d fullcapnom: %d fullcaprep: %d rcomp0: %d tempco: %d",lp.saved_cycles,lp.saved_fullcapnom,lp.saved_fullcaprep,lp.saved_rcomp0,lp.saved_tempco);
         
-    max1726x_initialize_ez_config(&ez);    
-    max1726x_clear_por();
-    max1726x_restore_learned_parameters(&lp); // FIXME: Battery history is not restored
+    max1726x_initialize_ez_config(&ez);
+    max1726x_clear_por();    
+    max1726x_restore_learned_parameters(&lp);
     
 
     uint8_t soc=0;
-    uint16_t counter = (uint16_t) 60000/SOC_READING_PERIOD_MS*30;
+    const uint16_t trigger_value = (uint16_t) 60000/SOC_READING_PERIOD_MS*30; // 30 min
+    uint16_t counter = trigger_value;
 
     while (1)
     {
@@ -115,9 +116,10 @@ void batt_monitor_task(void *pvP)
              if (RET_OK == max1726x_get_learned_parameters(&lp))
             {
                 ESP_LOGI("BATT_LP", "Saving Batt Params");
+                ESP_LOGI("BATT_LP", "cycles: %d fullcapnom: %d fullcaprep: %d rcomp0: %d tempco: %d",lp.saved_cycles,lp.saved_fullcapnom,lp.saved_fullcaprep,lp.saved_rcomp0,lp.saved_tempco);
                 batt_archiver_save_lp(&lp);            
             }
-            counter = (uint16_t) 60000/SOC_READING_PERIOD_MS*30;
+            counter = (uint16_t) trigger_value;
         }
         counter--;
         ESP_LOGI("BATT", "Battery level: %d %%", soc);
