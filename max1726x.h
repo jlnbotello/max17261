@@ -53,7 +53,8 @@
 
 #define R_SENSE_mOhm        5.0
 
-#define CAP_LSB_mAh         (5.00 / R_SENSE_mOhm)   /* 5 uVh / R_SENSE_mOhm */
+#define CAP_LSB_mAh         (5.00 / R_SENSE_mOhm)   /* 5 uVh / R_SENSE_mOhm   [mAh]*/
+#define DQACC_LSB_mAh       (20.00 / R_SENSE_mOhm)   /* 20 uVh / R_SENSE_mOhm [mAh] | Obtained from testing and manufacturer confirmation */
 #define V_LSB_mV            (1.25 / 16)
 #define I_LSB_mA            (1.5625 / R_SENSE_mOhm) /* 1.5625 uV / R_SENSE_mOhm */
 
@@ -157,6 +158,7 @@
 #define MAX1726X_QH_REG                     0x4D
 //                             reserved for 0x4E
 //                             reserved for 0x4F
+#define MAX1726X_SOFTWAKEUP_REG				0x60
 
 #define MAX1726X_MODELDATA0_START_REG       0x80
 #define MAX1726X_MODELDATA1_START_REG       0x90

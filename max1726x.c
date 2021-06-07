@@ -44,6 +44,7 @@
 /**** Includes ****/
 #include "max1726x.h"
 #include "low_iface.h"
+#include "esp_log.h"
 
 /**** Globals ****/
 uint16_t max1726x_regs[256];
@@ -52,6 +53,24 @@ max1726x_ez_config_t max1726x_ez_config;
 max1726x_short_ini_t max1726x_short_ini;
 max1726x_full_ini_t max1726x_full_ini;
 max1726x_learned_parameters_t max1726x_learned_parameters;
+
+/**** Static ****/
+static void exit_hibernate_mode(){
+	// Exit Hibernate Mode step storing orignal HibCFG value. See user guide Soft-Wakeup
+
+	/// Store original HibCFG value
+	max1726x_read_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
+	/// Exit hibernate
+	uint16_t tempdata = 0x0090;
+	max1726x_write_reg(MAX1726X_SOFTWAKEUP_REG, &tempdata);
+	tempdata = 0x0000;
+	max1726x_write_reg(MAX1726X_HIBCFG_REG, &tempdata);
+	max1726x_write_reg(MAX1726X_SOFTWAKEUP_REG, &tempdata);
+}
+static void rest_hibernate_mode(){
+	/// Restore Original HibCFG value
+	max1726x_write_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
+}
 
 
 /**** Functions ****/
@@ -166,22 +185,13 @@ void max1726x_wait_dnr(void)
 /* ************************************************************************* */
 void max1726x_initialize_ez_config(max1726x_ez_config_t *ez_cfg)
 {
-	uint16_t tempdata;
-	
 	max1726x_ez_config.designcap = ez_cfg->designcap;
 	max1726x_ez_config.ichgterm = ez_cfg->ichgterm;
 	max1726x_ez_config.modelcfg = ez_cfg->modelcfg;
 	max1726x_ez_config.vempty = ez_cfg->vempty;
-	
-	/// Store original HibCFG value
-	max1726x_read_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
-	
-	/// Exit Hibernate Mode step
-	tempdata = 0x0090;
-	max1726x_write_reg(0x60, &tempdata);
-	tempdata = 0x0000;
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &tempdata);
-	max1726x_write_reg(0x60, &tempdata);
+
+	/// Exit Hibernate Mode storing original HibCFG value
+	exit_hibernate_mode();
 	
 	/// OPTION 1 EZ Config (No INI file is needed)
 	max1726x_regs[MAX1726X_DESIGNCAP_REG] = max1726x_ez_config.designcap;
@@ -205,15 +215,13 @@ void max1726x_initialize_ez_config(max1726x_ez_config_t *ez_cfg)
 	}
 	
 	/// Restore Original HibCFG value
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
-	
+	rest_hibernate_mode();
+
 }
 
 /* ************************************************************************* */
 void max1726x_initialize_short_ini(void)
 {
-	uint16_t tempdata;
-	
 	/// customer must provide the battery parameters, get the parameters from MAXIM INI file
 	max1726x_short_ini.designcap  = 0x06aE;
 	max1726x_short_ini.ichgterm   = 0x0100;
@@ -230,15 +238,8 @@ void max1726x_initialize_short_ini(void)
 	/// customer must provide the battery parameters, get the parameters from MAXIM INI file
 	
 	
-	/// Store original HibCFG value
-	max1726x_read_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
-	
-	/// Exit Hibernate Mode step
-	tempdata = 0x0090;
-	max1726x_write_reg(0x60, &tempdata);
-	tempdata = 0x0000;
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &tempdata);
-	max1726x_write_reg(0x60, &tempdata);
+	/// Exit Hibernate Mode storing original HibCFG value
+	exit_hibernate_mode();
 	
 	/// OPTION 2 Custom Short INI without OCV Table
 	max1726x_regs[MAX1726X_DESIGNCAP_REG] = max1726x_short_ini.designcap;
@@ -279,14 +280,13 @@ void max1726x_initialize_short_ini(void)
 	// max1726x_write_reg(MAX1726X_QRTABLE30_REG, &max1726x_regs[MAX1726X_QRTABLE30_REG]);	// optional
 	
 	/// Restore Original HibCFG value
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
+	rest_hibernate_mode();
 
 }
 
 /* ************************************************************************* */
 void max1726x_initialize_full_ini(void)
 {
-	uint16_t tempdata;
 	uint8_t ret;
 	
 	
@@ -347,18 +347,9 @@ void max1726x_initialize_full_ini(void)
 	max1726x_full_ini.modeldata1[14] = 0x0000;
 	max1726x_full_ini.modeldata1[15] = 0x0000;
 	/// customer must provide the battery parameters, get the parameters from MAXIM INI file
-	
-	
-	
-	/// Store original HibCFG value
-	max1726x_read_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
-	
-	/// Exit Hibernate Mode step
-	tempdata = 0x0090;
-	max1726x_write_reg(0x60, &tempdata);
-	tempdata = 0x0000;
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &tempdata);
-	max1726x_write_reg(0x60, &tempdata);
+
+	/// Exit Hibernate Mode storing original HibCFG value
+	exit_hibernate_mode();
 	
 	/// OPTION 3 Custom Full INI with OCV Table
 	max1726x_regs[MAX1726X_DESIGNCAP_REG] = max1726x_full_ini.designcap;
@@ -462,8 +453,7 @@ void max1726x_initialize_full_ini(void)
 
 	
 	/// Restore Original HibCFG value
-	max1726x_write_reg(MAX1726X_HIBCFG_REG, &max1726x_regs[MAX1726X_HIBCFG_REG]);
-	
+	rest_hibernate_mode();
 
 }
 
@@ -517,74 +507,46 @@ ret_t max1726x_get_learned_parameters(max1726x_learned_parameters_t *lp)
 
 	return ret;
 }
-#include "esp_log.h"
+
 /* ************************************************************************* */
 ret_t max1726x_restore_learned_parameters(max1726x_learned_parameters_t *lp)
 {
-	ret_t ret = RET_FAIL;
-	
 	max1726x_regs[MAX1726X_RCOMP0_REG] = lp->saved_rcomp0;
 	max1726x_regs[MAX1726X_TEMPCO_REG] = lp->saved_tempco;
 	max1726x_regs[MAX1726X_FULLCAPREP_REG] = lp->saved_fullcaprep;
 	max1726x_regs[MAX1726X_CYCLES_REG] = lp->saved_cycles;
 	max1726x_regs[MAX1726X_FULLCAPNOM_REG] = lp->saved_fullcapnom;
-	// it's seems this is the magic (soft wake up and/or config2 as GUI does.)
-	uint16_t value = 0x0F; 
-	max1726x_write_reg(0x60,&value); // soft wake up
-	max1726x_regs[MAX1726X_CONFIG2_REG] = 0x01;
-	max1726x_write_and_verify_reg(MAX1726X_CONFIG2_REG, &max1726x_regs[MAX1726X_CONFIG2_REG]);	
+	
+	uint16_t temp = 0x000F; // value meaning not documented. GUI does it and now restoring works
+	max1726x_write_reg(MAX1726X_SOFTWAKEUP_REG, &temp); 
+	temp = 0x0000; 			// clears command register
+	max1726x_write_reg(MAX1726X_SOFTWAKEUP_REG, &temp);
 
-	//STEP 1. Restoring capacity parameters
 	max1726x_write_and_verify_reg(MAX1726X_RCOMP0_REG, &max1726x_regs[MAX1726X_RCOMP0_REG]);
 	ESP_LOGI("RESTORING....","write rcomp0: 0x%x",max1726x_regs[MAX1726X_RCOMP0_REG]);
 
 	max1726x_write_and_verify_reg(MAX1726X_TEMPCO_REG, &max1726x_regs[MAX1726X_TEMPCO_REG]);
 	ESP_LOGI("RESTORING....","write tempco: 0x%x",max1726x_regs[MAX1726X_TEMPCO_REG]);
 
-	max1726x_write_and_verify_reg(MAX1726X_FULLCAPNOM_REG, &max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
-	ESP_LOGI("RESTORING....","write fullcapnom: 0x%x",max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
-
-	delay_iface_ms(350);
-
-	//STEP 2. Restore FullCap
-	ret = max1726x_read_reg(MAX1726X_FULLCAPNOM_REG,&max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
-	RETURN_IF_FAIL(ret);
-	ESP_LOGI("RESTORING....","read fullcapnom: 0x%x",max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
-
-	ret = max1726x_read_reg(MAX1726X_MIXSOC_REG,&max1726x_regs[MAX1726X_MIXSOC_REG]);
-	RETURN_IF_FAIL(ret);
-	ESP_LOGI("RESTORING....","read mixsoc: 0x%x",max1726x_regs[MAX1726X_MIXSOC_REG]);
-
-	// REMCAP ALIAS MIXCAP
-  	max1726x_regs[MAX1726X_REMCAP_REG] = (uint16_t) max1726x_regs[MAX1726X_MIXSOC_REG]/25600.0 * max1726x_regs[MAX1726X_FULLCAPNOM_REG];
-
-	max1726x_write_and_verify_reg(MAX1726X_REMCAP_REG,&max1726x_regs[MAX1726X_REMCAP_REG]);
-	ESP_LOGI("RESTORING....","write mixcap: 0x%x",max1726x_regs[MAX1726X_REMCAP_REG]);
-
 	max1726x_write_and_verify_reg(MAX1726X_FULLCAPREP_REG, &max1726x_regs[MAX1726X_FULLCAPREP_REG]);
 	ESP_LOGI("RESTORING....","write fullcaprep: 0x%x",max1726x_regs[MAX1726X_FULLCAPREP_REG]);
 
-	//STEP 3. Write DQACC to 200% of Capacity and DPACC to 200%
+	max1726x_write_and_verify_reg(MAX1726X_FULLCAPNOM_REG, &max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
+	ESP_LOGI("RESTORING....","write fullcapnom: 0x%x",max1726x_regs[MAX1726X_FULLCAPNOM_REG]);
+
 	// Write dPacc to 200%
 	max1726x_regs[MAX1726X_DPACC_REG] = 0x0C80;
-
 	max1726x_write_and_verify_reg(MAX1726X_DPACC_REG, &max1726x_regs[MAX1726X_DPACC_REG]);
 	ESP_LOGI("RESTORING....","write dpacc: 0x%x",max1726x_regs[MAX1726X_DPACC_REG]);
 
 	// Write dQacc to 200% of Capacity
-	// Multiply by 2 to get 200%. Divide by to 2 (DQACC LSB is fixed 2 mAh) get reg value of DQACC. 2/2 is 1. Nothing to add.
-    // FullCapNom register conversion: Multiply by capacity resolution (Rsense dependent) to get fullcapnom [mAh].
-	max1726x_regs[MAX1726X_DQACC_REG] = (uint16_t) (lp->saved_fullcapnom * CAP_LSB_mAh);
-	
+	max1726x_regs[MAX1726X_DQACC_REG] = (uint16_t) (lp->saved_fullcapnom / 2); // factor explanation: 2 * [CAP_LSB]/[DQACC_LSB] = 2 * (1/4) = (1/2) 
 	max1726x_write_and_verify_reg(MAX1726X_DQACC_REG, &max1726x_regs[MAX1726X_DQACC_REG]);
 	ESP_LOGI("RESTORING....","write dqacc: 0x%x",max1726x_regs[MAX1726X_DQACC_REG]);
 	
-	delay_iface_ms(350);
-
-	//STEP 4. Restore Cycles register
 	max1726x_write_and_verify_reg(MAX1726X_CYCLES_REG, &max1726x_regs[MAX1726X_CYCLES_REG]);
 	ESP_LOGI("RESTORING....","write cycles: 0x%x",max1726x_regs[MAX1726X_CYCLES_REG]);
-		
+
 	return RET_OK;
 }
 
